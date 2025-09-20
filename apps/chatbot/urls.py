@@ -1,10 +1,9 @@
+from django.views.generic import TemplateView
 from django.urls import path
-
-from .views import index
 
 
 app_name = "chatbot"
 
 urlpatterns = [
-    path('', index.index, name='index'),
+    path('', TemplateView.as_view(template_name='chatbot/index.html'), name='index'),
 ]

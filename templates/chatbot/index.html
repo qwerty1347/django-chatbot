@@ -1,0 +1,130 @@
+{% extends 'chatbot/common/base.html' %}
+
+{% block title %}ChatBot{% endblock title %}
+
+{% block head %}
+<style>
+    body { background: #f8f9fa; }
+
+    /* 채팅 박스 */
+    #chat-box {
+        max-width: 600px;
+        margin: 50px auto;
+        height: 650px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background: #fff;
+        padding: 15px;
+    }
+
+    /* 메시지 공통 */
+    .message {
+        margin: 10px 0;
+        display: flex;
+        align-items: flex-end;
+        position: relative;
+    }
+    .message.user { justify-content: flex-end; }
+    .message.bot { justify-content: flex-start; }
+
+    /* 프로필 원 */
+    .profile {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        flex-shrink: 0;
+    }
+    .message.user .profile { margin-left: 8px; margin-right: 0; }
+    .message.bot .profile { margin-right: 8px; margin-left: 0; }
+
+    /* 말풍선 */
+    .bubble {
+        display: inline-block;
+        position: relative;
+        padding: 10px 15px;
+        border-radius: 15px;
+        max-width: 70%;
+    }
+
+    /* 사용자 말풍선 */
+    .message.user .bubble {
+        background: #0d6efd;
+        color: #fff;
+        border-bottom-right-radius: 0;
+    }
+    .message.user .bubble::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-left: 14px solid #0d6efd;
+    }
+
+    /* 봇 말풍선 */
+    .message.bot .bubble {
+        background: #e9ecef;
+        color: #000;
+        border-bottom-left-radius: 0;
+    }
+    .message.bot .bubble::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-right: 14px solid #e9ecef;
+    }
+</style>
+{% endblock head %}
+
+{% block content %}
+<div id="chat-box">
+  <!-- 초기 메시지 -->
+  <div class="message bot">
+    <div class="profile"></div>
+    <div class="bubble">안녕하세요! 질문을 입력해주세요.</div>
+  </div>
+</div>
+
+<form id="chat-form" class="d-flex justify-content-center mt-3">
+    <input type="text" id="user-input" class="form-control me-2" style="max-width: 500px;" placeholder="질문을 입력하세요">
+    <button type="submit" class="btn btn-primary">전송</button>
+</form>
+{% endblock content %}
+
+{% block script %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(function() {
+    $('#chat-form').on('submit', function(e) {
+        e.preventDefault();
+        const input = $('#user-input').val().trim();
+
+        if (!input) return;
+
+        // 사용자 메시지 추가 (오른쪽)
+        const userMsg = $('<div>').addClass('message user')
+                                    .append($('<div>').addClass('bubble').text(input))
+                                    .append($('<div>').addClass('profile')); // 프로필 오른쪽
+        $('#chat-box').append(userMsg);
+
+        // 봇 메시지 추가 (왼쪽)
+        const botMsg = $('<div>').addClass('message bot')
+                                    .append($('<div>').addClass('profile')) // 프로필 왼쪽
+                                    .append($('<div>').addClass('bubble').text('여기에 답변이 표시됩니다.'));
+        $('#chat-box').append(botMsg);
+
+        // 입력 초기화 & 스크롤
+        $('#user-input').val('');
+        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+    });
+});
+</script>
+{% endblock script %}
