@@ -37,7 +37,11 @@
         flex-shrink: 0;
     }
     .message.user .profile { margin-left: 8px; margin-right: 0; }
-    .message.bot .profile { margin-right: 8px; margin-left: 0; }
+    .message.bot .profile {
+        margin-right: 8px;
+        margin-left: 0;
+        align-self: flex-start; /* 프로필 상단 고정 */
+    }
 
     /* 말풍선 */
     .bubble {
@@ -65,12 +69,20 @@
         border-left: 14px solid #0d6efd;
     }
 
-    /* 봇 말풍선 */
+    /* 챗봇 말풍선 */
     .message.bot .bubble {
+        min-width: 50px;
+        max-width: 70%;
+        min-height: 40px;       /* 최소 높이 지정 */
+        line-height: 1.4;       /* 텍스트 중앙 맞춤 */
+        padding: 10px 15px;
         background: #e9ecef;
         color: #000;
         border-bottom-left-radius: 0;
+        display: inline-block;  /* 안전하게 글자 보이도록 */
+        vertical-align: middle; /* inline-block 중앙 정렬 */
     }
+
     .message.bot .bubble::after {
         content: "";
         position: absolute;
@@ -86,11 +98,10 @@
 
 {% block content %}
 <div id="chat-box">
-  <!-- 초기 메시지 -->
-  <div class="message bot">
-    <div class="profile"></div>
-    <div class="bubble">안녕하세요! 질문을 입력해주세요.</div>
-  </div>
+    <div class="message bot">
+        <div class="profile"></div>
+        <div class="bubble">안녕하세요! 궁금하신점을 입력해주세요.</div>
+    </div>
 </div>
 
 <form id="chat-form" class="d-flex justify-content-center mt-3">
@@ -102,29 +113,83 @@
 {% block script %}
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
-$(function() {
+$(document).ready(function () {
     $('#chat-form').on('submit', function(e) {
         e.preventDefault();
-        const input = $('#user-input').val().trim();
+        const user_input = $('#user-input').val().trim();
 
-        if (!input) return;
+        if (!user_input) {
+            alert('질문을 입력해 주세요.');
+            return;
+        }
 
         // 사용자 메시지 추가 (오른쪽)
         const userMsg = $('<div>').addClass('message user')
-                                    .append($('<div>').addClass('bubble').text(input))
-                                    .append($('<div>').addClass('profile')); // 프로필 오른쪽
+            .append($('<div>').addClass('bubble').text(user_input))
         $('#chat-box').append(userMsg);
 
-        // 봇 메시지 추가 (왼쪽)
+        // 챗봇 메시지 추가 (왼쪽, ...)
         const botMsg = $('<div>').addClass('message bot')
-                                    .append($('<div>').addClass('profile')) // 프로필 왼쪽
-                                    .append($('<div>').addClass('bubble').text('여기에 답변이 표시됩니다.'));
+            .append($('<div>').addClass('profile'))
+            .append($('<div>').addClass('bubble').text('...'));
         $('#chat-box').append(botMsg);
 
         // 입력 초기화 & 스크롤
         $('#user-input').val('');
         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+
+        const bubbleElement = botMsg.find('.bubble');
+        getAgentOutput(user_input, bubbleElement);
     });
+
+
+    function showTyping(bubbleElement) {
+        bubbleElement.text(''); // 초기화
+        let dots = 0;
+        const maxDots = 3;
+        const timer = setInterval(() => {
+            dots = (dots + 1) % (maxDots + 1);
+            bubbleElement.text('.'.repeat(dots));
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        }, 500); // 0.5초마다 점 변화
+
+        return timer;
+    }
+
+
+    function typeText(bubbleElement, text, interval = 30) {
+        let index = 0;
+        const timer = setInterval(() => {
+            bubbleElement.text(text.slice(0, index + 1));
+            index++;
+            if (index >= text.length) clearInterval(timer);
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        }, interval);
+    }
+
+
+    function getAgentOutput(user_input, bubbleElement) {
+         const typingTimer = showTyping(bubbleElement);
+
+        $.ajax({
+            type: "get",
+            url: "/api/v1/agent/chatbot/test",
+            data: {
+                "query": user_input
+            },
+            dataType: "json",
+            success: function(response) {
+                const answer = response.agent_output || "죄송합니다. 답변을 가져오지 못했습니다.";
+                typeText(bubbleElement, answer, 30);
+            },
+            error: function (xhr, error, status) {
+                alert('요청 처리에 실패했습니다. ' + (xhr.responseJSON?.message ?? '관리자에게 문의해 주세요.') + ' ' + xhr.responseText);
+            },
+            complete: function () {
+                clearInterval(typingTimer);
+            }
+        });
+    }
 });
 </script>
 {% endblock script %}
