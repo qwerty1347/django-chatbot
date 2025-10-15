@@ -33,7 +33,8 @@
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background-color: #6c757d;
+        background-size: cover;
+        background-position: center;
         flex-shrink: 0;
     }
     .message.user .profile { margin-left: 8px; margin-right: 0; }
@@ -99,8 +100,8 @@
 {% block content %}
 <div id="chat-box">
     <div class="message bot">
-        <div class="profile"></div>
-        <div class="bubble">안녕하세요! 궁금하신점을 입력해주세요.</div>
+         <div class="profile" style="background-image: url('/storage/chatbot/profile.png');"></div>
+        <div class="bubble">안녕하세요 Agent 챗봇입니다! 궁금하신 점이 있으면 질문을 입력해 주세요 😊</div>
     </div>
 </div>
 
@@ -130,7 +131,10 @@ $(document).ready(function () {
 
         // 챗봇 메시지 추가 (왼쪽, ...)
         const botMsg = $('<div>').addClass('message bot')
-            .append($('<div>').addClass('profile'))
+            .append(
+                $('<div>').addClass('profile')
+                .css('background-image', 'url("/storage/chatbot/profile.png")')
+            )
             .append($('<div>').addClass('bubble').text('...'));
         $('#chat-box').append(botMsg);
 
@@ -170,16 +174,18 @@ $(document).ready(function () {
 
     function getAgentOutput(user_input, bubbleElement) {
          const typingTimer = showTyping(bubbleElement);
+         const CHATBOT_API_URL = "{{ CHATBOT_API_URL }}";
 
         $.ajax({
             type: "get",
-            url: "/api/v1/agent/chatbot/test",
+            url: CHATBOT_API_URL + "/api/v1/agent/chatbot",
             data: {
                 "query": user_input
             },
             dataType: "json",
             success: function(response) {
-                const answer = response.agent_output || "죄송합니다. 답변을 가져오지 못했습니다.";
+                console.log(response);
+                const answer = response.code == 200 ? response.data : "죄송합니다. 답변을 가져오지 못했습니다.";
                 typeText(bubbleElement, answer, 30);
             },
             error: function (xhr, error, status) {
