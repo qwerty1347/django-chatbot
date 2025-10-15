@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf.urls.static import static
+
+from config import settings
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('chatbot/', include('apps.chatbot.urls', namespace='chatbot')),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STORAGE_URL, document_root=settings.STORAGE_ROOT)
